@@ -29,40 +29,50 @@ public class HostBlackListsValidator {
      * @param ipaddress suspicious host's IP address.
      * @return  Blacklists numbers where the given host's IP address was found.
      */
-    public List<Integer> checkHost(String ipaddress){
-        
-        LinkedList<Integer> blackListOcurrences=new LinkedList<>();
-        
-        int ocurrencesCount=0;
-        
+    public List<Integer> checkHost(String ipaddress, int N) throws InterruptedException{
         HostBlacklistsDataSourceFacade skds=HostBlacklistsDataSourceFacade.getInstance();
-        
+        int servidores=skds.getRegisteredServersCount();
+        LinkedList<Integer> blackListOcurrences=new LinkedList<>();
+        int ocurrencesCount=0;      
         int checkedListsCount=0;
-        
-        for (int i=0;i<skds.getRegisteredServersCount() && ocurrencesCount<BLACK_LIST_ALARM_COUNT;i++){
-            checkedListsCount++;
-            
-            if (skds.isInBlackListServer(i, ipaddress)){
-                
-                blackListOcurrences.add(i);
-                
-                ocurrencesCount++;
-            }
+        int threads =servidores/N;
+        CounterTrustworthy thread;
+        if(N>servidores){
+            N=1;
         }
-        
+        for(int i=0;i<servidores;i+=N){
+            if(i+N<servidores){
+                thread=new CounterTrustworthy(i,N+i,ipaddress,blackListOcurrences);
+            }else{
+                thread=new CounterTrustworthy(i,servidores%N,ipaddress,blackListOcurrences);
+            }
+            thread.start();                               
+            thread.join();
+        }
         if (ocurrencesCount>=BLACK_LIST_ALARM_COUNT){
             skds.reportAsNotTrustworthy(ipaddress);
         }
         else{
             skds.reportAsTrustworthy(ipaddress);
         }                
+        ocurrencesCount = sumatoria(blackListOcurrences);
+        System.out.println(ocurrencesCount);
+        LOG.log(Level.INFO, "Checked Black Lists:{0} of {1}", new Object[]{checkedListsCount, skds.getRegisteredServersCount()});   
+
         
-        LOG.log(Level.INFO, "Checked Black Lists:{0} of {1}", new Object[]{checkedListsCount, skds.getRegisteredServersCount()});
         
+                
         return blackListOcurrences;
+    
     }
     
-    
+    public int sumatoria(LinkedList<Integer> blackListOcurrences){
+        int sum  = 0;
+        for (int i: blackListOcurrences){
+            sum+=1;
+        }
+        return sum;
+    }
     private static final Logger LOG = Logger.getLogger(HostBlackListsValidator.class.getName());
     
     
