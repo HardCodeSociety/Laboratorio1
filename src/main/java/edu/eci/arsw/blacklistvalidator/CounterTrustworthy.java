@@ -31,11 +31,10 @@ public class CounterTrustworthy extends java.lang.Thread {
     @Override
     public void run(){
         HostBlacklistsDataSourceFacade skds=HostBlacklistsDataSourceFacade.getInstance();
-        int checkedListsCount=0;
         for (int i=min;i<max && counter<BLACK_LIST_ALARM_COUNT;i++){            
-            checkedListsCount++;            
-            if (skds.isInBlackListServer(i, ipaddress)){    
-                counter++;
+            if (skds.isInBlackListServer(i, ipaddress)){
+                System.out.println("entra");
+                counter+=1;
             }            
         }
     }

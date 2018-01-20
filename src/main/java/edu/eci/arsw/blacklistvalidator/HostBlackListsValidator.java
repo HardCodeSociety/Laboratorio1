@@ -35,28 +35,27 @@ public class HostBlackListsValidator {
         LinkedList<Integer> blackListOcurrences=new LinkedList<>();
         int ocurrencesCount=0;      
         int checkedListsCount=0;
-        int threads =servidores/N;
         CounterTrustworthy thread;
         if(N>servidores){
-            N=1;
+            N=servidores;
         }
-        for(int i=0;i<servidores;i+=N){
+        for(int i=0;i<=servidores;i+=N){
             if(i+N<servidores){
                 thread=new CounterTrustworthy(i,N+i,ipaddress);
             }else{
                 thread=new CounterTrustworthy(i,servidores%N,ipaddress);
             }
-            thread.start();                               
+            thread.start();     
             thread.join();
+            if(thread.getCounter()!=0) blackListOcurrences.add(thread.getCounter());
         }
+        ocurrencesCount = sumatoria(blackListOcurrences);
         if (ocurrencesCount>=BLACK_LIST_ALARM_COUNT){
             skds.reportAsNotTrustworthy(ipaddress);
         }
         else{
             skds.reportAsTrustworthy(ipaddress);
         }                
-        ocurrencesCount = sumatoria(blackListOcurrences);
-        System.out.println(ocurrencesCount);
         LOG.log(Level.INFO, "Checked Black Lists:{0} of {1}", new Object[]{checkedListsCount, skds.getRegisteredServersCount()});   
 
         
@@ -69,7 +68,7 @@ public class HostBlackListsValidator {
     public int sumatoria(LinkedList<Integer> blackListOcurrences){
         int sum  = 0;
         for (int i: blackListOcurrences){
-            sum+=1;
+            if(i!=0)sum+=1;
         }
         return sum;
     }
