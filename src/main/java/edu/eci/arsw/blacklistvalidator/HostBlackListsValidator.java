@@ -42,9 +42,9 @@ public class HostBlackListsValidator {
         }
         for(int i=0;i<servidores;i+=N){
             if(i+N<servidores){
-                thread=new CounterTrustworthy(i,N+i,ipaddress,blackListOcurrences);
+                thread=new CounterTrustworthy(i,N+i,ipaddress);
             }else{
-                thread=new CounterTrustworthy(i,servidores%N,ipaddress,blackListOcurrences);
+                thread=new CounterTrustworthy(i,servidores%N,ipaddress);
             }
             thread.start();                               
             thread.join();
