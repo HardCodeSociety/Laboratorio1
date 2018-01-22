@@ -33,6 +33,7 @@ public class HostBlackListsValidator {
         HostBlacklistsDataSourceFacade skds=HostBlacklistsDataSourceFacade.getInstance();
         int servidores=skds.getRegisteredServersCount();
         LinkedList<Integer> blackListOcurrences=new LinkedList<>();
+        LinkedList<Integer> listasEncontradas= new LinkedList<>();
         int ocurrencesCount=0;      
         int checkedListsCount=0;
         CounterTrustworthy thread;
@@ -41,13 +42,15 @@ public class HostBlackListsValidator {
         }
         for(int i=0;i<=servidores;i+=N){
             if(i+N<servidores){
-                thread=new CounterTrustworthy(i,N+i,ipaddress);
+                thread=new CounterTrustworthy(i,N+i,ipaddress,listasEncontradas);
             }else{
-                thread=new CounterTrustworthy(i,servidores%N,ipaddress);
+                thread=new CounterTrustworthy(i,servidores%N,ipaddress,listasEncontradas);
             }
             thread.start();     
             thread.join();
-            if(thread.getCounter()!=0) blackListOcurrences.add(thread.getCounter());
+            if(thread.getCounter()!=0) 
+                blackListOcurrences.add(thread.getCounter());
+            checkedListsCount += thread.getVisitedList();
         }
         ocurrencesCount = sumatoria(blackListOcurrences);
         if (ocurrencesCount>=BLACK_LIST_ALARM_COUNT){
@@ -61,7 +64,7 @@ public class HostBlackListsValidator {
         
         
                 
-        return blackListOcurrences;
+        return listasEncontradas;
     
     }
     

@@ -19,21 +19,28 @@ public class CounterTrustworthy extends java.lang.Thread {
     private int counter;
     private String ipaddress;
     private static final int BLACK_LIST_ALARM_COUNT=5;
+    private LinkedList<Integer> listasEncontradas;
+    private int visitedList;
+
 
     
-    public CounterTrustworthy(int min,int max,String ipaddress){
+    public CounterTrustworthy(int min,int max,String ipaddress,LinkedList<Integer> listasEncontradas){
         this.min=min;
         this.max=max;
         this.ipaddress=ipaddress;
         counter=0;
+        visitedList=0;
+        this.listasEncontradas=listasEncontradas;
     }
 
     @Override
     public void run(){
         HostBlacklistsDataSourceFacade skds=HostBlacklistsDataSourceFacade.getInstance();
         for (int i=min;i<max && counter<BLACK_LIST_ALARM_COUNT;i++){            
+            visitedList+=1;
             if (skds.isInBlackListServer(i, ipaddress)){
-                System.out.println("entra");
+                if(!listasEncontradas.contains(i))
+                    listasEncontradas.add(i);
                 counter+=1;
             }            
         }
@@ -41,6 +48,9 @@ public class CounterTrustworthy extends java.lang.Thread {
     
     public int getCounter(){
         return counter;
+    }
+    public int getVisitedList(){
+        return visitedList;
     }
     
 }
