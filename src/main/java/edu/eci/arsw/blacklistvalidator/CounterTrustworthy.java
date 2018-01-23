@@ -39,8 +39,7 @@ public class CounterTrustworthy extends java.lang.Thread {
         for (int i=min;i<max && counter<BLACK_LIST_ALARM_COUNT;i++){            
             visitedList+=1;
             if (skds.isInBlackListServer(i, ipaddress)){
-                if(!listasEncontradas.contains(i))
-                    listasEncontradas.add(i);
+                listasEncontradas.add(i);
                 counter+=1;
             }            
         }

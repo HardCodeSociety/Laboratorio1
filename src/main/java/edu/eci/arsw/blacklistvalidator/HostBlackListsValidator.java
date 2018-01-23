@@ -6,6 +6,7 @@
 package edu.eci.arsw.blacklistvalidator;
 
 import edu.eci.arsw.spamkeywordsdatasource.HostBlacklistsDataSourceFacade;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
@@ -32,6 +33,7 @@ public class HostBlackListsValidator {
     public List<Integer> checkHost(String ipaddress, int N) throws InterruptedException{
         HostBlacklistsDataSourceFacade skds=HostBlacklistsDataSourceFacade.getInstance();
         int servidores=skds.getRegisteredServersCount();
+        ArrayList<CounterTrustworthy> counters = new ArrayList<CounterTrustworthy>();
         LinkedList<Integer> blackListOcurrences=new LinkedList<>();
         LinkedList<Integer> listasEncontradas= new LinkedList<>();
         int ocurrencesCount=0;      
@@ -41,17 +43,22 @@ public class HostBlackListsValidator {
             N=servidores;
         }
         for(int i=0;i<=servidores;i+=N){
-            if(i+N<servidores){
+            if(i+N<=servidores){
                 thread=new CounterTrustworthy(i,N+i,ipaddress,listasEncontradas);
             }else{
                 thread=new CounterTrustworthy(i,servidores%N,ipaddress,listasEncontradas);
             }
-            thread.start();     
-            thread.join();
-            if(thread.getCounter()!=0) 
-                blackListOcurrences.add(thread.getCounter());
-            checkedListsCount += thread.getVisitedList();
+            counters.add(thread);
+        }    
+        for(CounterTrustworthy co : counters){
+            co.start();           
         }
+        for(CounterTrustworthy cc : counters){
+            cc.join();
+            if(cc.getCounter()!=0) 
+                blackListOcurrences.add(cc.getCounter());
+            checkedListsCount += cc.getVisitedList();
+        }                    
         ocurrencesCount = sumatoria(blackListOcurrences);
         if (ocurrencesCount>=BLACK_LIST_ALARM_COUNT){
             skds.reportAsNotTrustworthy(ipaddress);
