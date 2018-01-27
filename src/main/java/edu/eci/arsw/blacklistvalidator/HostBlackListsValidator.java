@@ -9,6 +9,7 @@ import edu.eci.arsw.spamkeywordsdatasource.HostBlacklistsDataSourceFacade;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,19 +35,21 @@ public class HostBlackListsValidator {
         HostBlacklistsDataSourceFacade skds=HostBlacklistsDataSourceFacade.getInstance();
         int servidores=skds.getRegisteredServersCount();
         ArrayList<CounterTrustworthy> counters = new ArrayList<CounterTrustworthy>();
-        LinkedList<Integer> blackListOcurrences=new LinkedList<>();
         LinkedList<Integer> listasEncontradas= new LinkedList<>();
-        int ocurrencesCount=0;      
-        int checkedListsCount=0;
+        AtomicInteger ocurrencesCount=new AtomicInteger();
+        AtomicInteger checkedListsCount=new AtomicInteger();
+        AtomicInteger[] ocurrences = new AtomicInteger[2];
+        ocurrences[0]=checkedListsCount;
+        ocurrences[1]=ocurrencesCount;
         CounterTrustworthy thread;
         if(N>servidores){
             N=servidores;
         }
         for(int i=0;i<=servidores;i+=N){
             if(i+N<=servidores){
-                thread=new CounterTrustworthy(i,N+i,ipaddress,listasEncontradas);
+                thread=new CounterTrustworthy(i,N+i,ipaddress,listasEncontradas,ocurrences);
             }else{
-                thread=new CounterTrustworthy(i,servidores%N,ipaddress,listasEncontradas);
+                thread=new CounterTrustworthy(i,servidores%N,ipaddress,listasEncontradas,ocurrences);
             }
             counters.add(thread);
         }    
@@ -55,18 +58,14 @@ public class HostBlackListsValidator {
         }
         for(CounterTrustworthy cc : counters){
             cc.join();
-            if(cc.getCounter()!=0) 
-                blackListOcurrences.add(cc.getCounter());
-            checkedListsCount += cc.getVisitedList();
-        }                    
-        ocurrencesCount = sumatoria(blackListOcurrences);
-        if (ocurrencesCount>=BLACK_LIST_ALARM_COUNT){
+        }
+        if (ocurrences[1].get()>=BLACK_LIST_ALARM_COUNT){
             skds.reportAsNotTrustworthy(ipaddress);
         }
         else{
             skds.reportAsTrustworthy(ipaddress);
         }                
-        LOG.log(Level.INFO, "Checked Black Lists:{0} of {1}", new Object[]{checkedListsCount, skds.getRegisteredServersCount()});   
+        LOG.log(Level.INFO, "Checked Black Lists:{0} of {1}", new Object[]{ocurrences[0], skds.getRegisteredServersCount()});   
 
         
         
@@ -75,13 +74,6 @@ public class HostBlackListsValidator {
     
     }
     
-    public int sumatoria(LinkedList<Integer> blackListOcurrences){
-        int sum  = 0;
-        for (int i: blackListOcurrences){
-            if(i!=0)sum+=1;
-        }
-        return sum;
-    }
     private static final Logger LOG = Logger.getLogger(HostBlackListsValidator.class.getName());
     
     
